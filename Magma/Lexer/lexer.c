@@ -61,7 +61,7 @@ typedef enum
 
     // POINTER: pointer operators
     TOK_POINT_STAR, // @
-    TOK_POINT_AND,  // §
+    TOK_POINT_AND,  // `
 
     // ASSIGNMENT: various compound assignment operators
     TOK_ASSIGN,       // =
@@ -110,6 +110,57 @@ typedef enum
     TOK_NEWLINE, // \n
     TOK_EOF      // End of file
 } TokenType;
+
+typedef struct
+{
+    const char *text;
+    TokenType type;
+} Operator;
+
+static Operator operators[] = {
+    {"+=", TOK_PLUS_ASSIGN},
+    {"++", TOK_INC},
+    {"+", TOK_PLUS},
+
+    {"-=", TOK_MINUS_ASSIGN},
+    {"--", TOK_DEC},
+    {"->", TOK_ARROW},
+    {"-", TOK_MINUS},
+
+    {"*=", TOK_STAR_ASSIGN},
+    {"*", TOK_STAR},
+
+    {"/=", TOK_SLASH_ASSIGN},
+    {"/", TOK_SLASH},
+
+    {"%=", TOK_PCNT_ASSIGN},
+    {"%", TOK_PERCENT},
+
+    {"==", TOK_EQ_EQ},
+    {"=", TOK_ASSIGN},
+
+    {"!=", TOK_NOT_EQ},
+    {"!", TOK_NOT},
+
+    {"<=", TOK_LEQ},
+    {"<<", TOK_BIT_LSHIFT},
+    {"<", TOK_LESSTHAN},
+
+    {">=", TOK_GEQ},
+    {">>", TOK_BIT_RSHIFT},
+    {">", TOK_GREATERTHAN},
+
+    {"&&", TOK_AND},
+    {"||", TOK_OR},
+
+    {"&", TOK_BIT_AND},
+    {"|", TOK_BIT_OR},
+    {"^", TOK_BIT_XOR},
+    {"~", TOK_BIT_NOT},
+
+    {"?", TOK_QMARK},
+
+    {NULL, 0}};
 
 // Representation of a single token produced by the lexer
 // `type` indicates the kind of token, `start` points into the source
@@ -347,176 +398,106 @@ void skip_whitespace(Lexer *lexer)
     }
 }
 
+Token lex_operator(Lexer *lexer)
+{
+    const char *start = lexer->current;
+
+    for (int i = 0; operators[i].text; i++)
+    {
+        size_t length = strlen(operators[i].text);
+
+        if ((lexer->end - start) >= length &&
+            strncmp(start, operators[i].text, length) == 0)
+        {
+            lexer->current += length;
+            return make_token(lexer, operators[i].type, start);
+        }
+    }
+
+    lexer->current++;
+    return make_token(lexer, TOK_IDENTIFIER, start);
+}
+
 // Return the next token from the input stream. Skips whitespace and handles
 // all single-character tokens as well as multi-character operators, literals,
 // identifiers, numbers, strings, and comments.
 Token lexer_next(Lexer *lexer)
 {
-
-    skip_whitespace(lexer);
+    skip_whitespace(lexer); // SKIP WHITESPACE
 
     if (lexer->current >= lexer->end)
-        return make_token(lexer, TOK_EOF, lexer->current);
+        return make_token(lexer, TOK_EOF, lexer->current); // END OF FILE
 
-    const char *start = lexer->current;
-    char c = *lexer->current++;
+    char currentchar = *lexer->current;
 
-    switch (c)
+    if (IS_ALPHA(currentchar) || currentchar == '_') // IDENTIFIER
+        return lex_identifier(lexer);
+
+    if (IS_DIGIT(currentchar)) // NUMBER
+        return lex_number(lexer);
+
+    if (currentchar == '"') // STRING
+        return lex_string(lexer);
+
+    if ((lexer->end - lexer->current) > 1 && currentchar == '/' && lexer->current[1] == '/') // COMMENT
+        return lex_comment(lexer);
+
+    switch (*lexer->current)
     {
-
-    case '+':
-        if (*lexer->current == '+')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_INC, start);
-        } // ++
-        if (*lexer->current == '=')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_PLUS_ASSIGN, start);
-        } // +=
-        return make_token(lexer, TOK_PLUS, start); // +
-
-    case '-':
-        if (*lexer->current == '-')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_DEC, start);
-        } // --
-        if (*lexer->current == '=')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_MINUS_ASSIGN, start);
-        } // -=
-        if (*lexer->current == '>')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_ARROW, start);
-        } // ->
-        return make_token(lexer, TOK_MINUS, start); // -
-
-    case '*':
-        if (*lexer->current == '=')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_STAR_ASSIGN, start);
-        } // *=
-        if (*lexer->current == '*')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_POWER, start);
-        } // **
-        return make_token(lexer, TOK_STAR, start); // *
-
-    case '/':
-        if (*lexer->current == '/')
-            return lex_comment(lexer); // //
-        if (*lexer->current == '=')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_SLASH_ASSIGN, start);
-        } // /=
-        return make_token(lexer, TOK_SLASH, start); // /
-
-    case '%':
-        if (*lexer->current == '=')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_PCNT_ASSIGN, start);
-        } // %=
-        return make_token(lexer, TOK_PERCENT, start); // %
-
-    case '^':
-        return make_token(lexer, TOK_BIT_XOR, start); // ^
-    case '&':
-        return make_token(lexer, TOK_BIT_AND, start); // &
-    case '|':
-        return make_token(lexer, TOK_BIT_OR, start); // |
-    case '~':
-        return make_token(lexer, TOK_BIT_NOT, start); // ~
-
-    case '!':
-        if (*lexer->current == '=')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_NOT_EQ, start);
-        } // !=
-        return make_token(lexer, TOK_NOT, start); // !
-
-    case '=':
-        if (*lexer->current == '=')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_EQ_EQ, start);
-        } // ==
-        return make_token(lexer, TOK_ASSIGN, start); // =
-
-    case '<':
-        if (*lexer->current == '=')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_LEQ, start);
-        } // <=
-        if (*lexer->current == '<')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_BIT_LSHIFT, start);
-        } // <<
-        return make_token(lexer, TOK_LESSTHAN, start); // <
-
-    case '>':
-        if (*lexer->current == '=')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_GEQ, start);
-        } // >=
-        if (*lexer->current == '>')
-        {
-            lexer->current++;
-            return make_token(lexer, TOK_BIT_RSHIFT, start);
-        } // >>
-        return make_token(lexer, TOK_GREATERTHAN, start); // >
-
-    case '?':
-        return make_token(lexer, TOK_QMARK, start); // ?
     case '(':
-        return make_token(lexer, TOK_LPAREN, start); // (
-    case ')':
-        return make_token(lexer, TOK_RPAREN, start); // )
-    case '{':
-        return make_token(lexer, TOK_LBRACE, start); // {
-    case '}':
-        return make_token(lexer, TOK_RBRACE, start); // }
-    case '[':
-        return make_token(lexer, TOK_LBRACKET, start); // [
-    case ']':
-        return make_token(lexer, TOK_RBRACKET, start); // ]
-    case ',':
-        return make_token(lexer, TOK_COMMA, start); // ,
-    case '.':
-        return make_token(lexer, TOK_DOT, start); // .
-    case ':':
-        return make_token(lexer, TOK_COLON, start); // :
-    case '\\':
-        return make_token(lexer, TOK_BACKSLASH, start); // '\'
-    case '\n':
-        return make_token(lexer, TOK_NEWLINE, start); // \n
-    case '@':
-        return make_token(lexer, TOK_POINT_STAR, start); // @
-    case '`':
-        return make_token(lexer, TOK_POINT_AND, start); // §
-    case '"':
-        return lex_string(lexer); // String
+        lexer->current++;
+        return make_token(lexer, TOK_LPAREN, lexer->current - 1); // (
 
-    default:
-        // letters/underscore start identifiers or keywords
-        if (IS_ALPHA(c) || c == '_')
-            return lex_identifier(lexer);
-        // digits start numeric literals
-        if (IS_DIGIT(c))
-            return lex_number(lexer);
-        break;
+    case ')':
+        lexer->current++;
+        return make_token(lexer, TOK_RPAREN, lexer->current - 1); // )
+
+    case '{':
+        lexer->current++;
+        return make_token(lexer, TOK_LBRACE, lexer->current - 1); // {
+
+    case '}':
+        lexer->current++;
+        return make_token(lexer, TOK_RBRACE, lexer->current - 1); // }
+
+    case '[':
+        lexer->current++;
+        return make_token(lexer, TOK_LBRACKET, lexer->current - 1); // [
+
+    case ']':
+        lexer->current++;
+        return make_token(lexer, TOK_RBRACKET, lexer->current - 1); // ]
+
+    case ',':
+        lexer->current++;
+        return make_token(lexer, TOK_COMMA, lexer->current - 1); // ,
+
+    case '.':
+        lexer->current++;
+        return make_token(lexer, TOK_DOT, lexer->current - 1); // .
+
+    case ':':
+        lexer->current++;
+        return make_token(lexer, TOK_COLON, lexer->current - 1); // :
+
+    case '\\':
+        lexer->current++;
+        return make_token(lexer, TOK_BACKSLASH, lexer->current - 1); // '\'
+
+    case '@':
+        lexer->current++;
+        return make_token(lexer, TOK_POINT_STAR, lexer->current - 1); // @
+
+    case '`':
+        lexer->current++;
+        return make_token(lexer, TOK_POINT_AND, lexer->current - 1); // `
     }
 
-    return make_token(lexer, TOK_IDENTIFIER, start);
+    if (*lexer->current == '\n')
+    {
+        lexer->current++;
+        return make_token(lexer, TOK_NEWLINE, lexer->current - 1); // NEWLINE
+    }
+
+    return lex_operator(lexer);
 }
