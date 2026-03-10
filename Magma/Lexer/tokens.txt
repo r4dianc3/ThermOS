@@ -92,6 +92,6 @@ ARROW - ->
 BACKSLASH - \
 
 # special
-COMMENT - #
+COMMENT - //
 NEWLINE - /n
 EOF - end of file
