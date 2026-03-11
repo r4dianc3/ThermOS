@@ -45,6 +45,7 @@ typedef enum
     TOK_VOID,
     TOK_START,
     TOK_TYPEDEF,
+    TOK_GLOBAL,
 
     // OPERATORS: arithmetic and other symbols
     TOK_PLUS,    // +
@@ -287,6 +288,8 @@ TokenType check_keyword(const char *start, uint32_t length)
     case 'g':
         if (length == 4 && memcmp(start, "goto", 4) == 0)
             return TOK_GOTO; // GOTO
+        if (length == 6 && memcmp(start, "global", 6) == 0)
+            return TOK_GLOBAL; // GlOBAL
         break;
 
     case 'a':
