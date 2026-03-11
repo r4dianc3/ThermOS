@@ -1,5 +1,12 @@
-START
+START begin(5, 10)
 
-func setx(void) {
-    var x = 10+5
+func incx(void) {
+    var x += 1
+}
+
+func begin(var x, var end) {
+    global x
+    while (x < end) {
+        incx()
+    }
 }
