@@ -26,7 +26,7 @@ typedef enum TokenTypeEnum
     TOK_IF,
     TOK_ELSE,
     TOK_WHILE,
-    TOK_BREAK,
+    TOK_BREAK, // BREAK LOOP
     TOK_IMPORT,
     TOK_STRUCT,
     TOK_ENUM, // ENUMERATION
@@ -46,7 +46,8 @@ typedef enum TokenTypeEnum
     TOK_START,
     TOK_TYPEDEF,
     TOK_GLOBAL,
-    TOK_PRINTT,
+    TOK_PRINTT, // PRINT TO CONSOLE
+    TOK_LIB, // IMPORT LIBRARY
 
     // OPERATORS: arithmetic and other symbols
     TOK_PLUS,    // +
@@ -350,6 +351,10 @@ TokenType check_keyword(const char *start, uint32_t length)
         if (length == 6 && memcmp(start, "Printt", 6) == 0)
             return TOK_PRINTT; // PRINT
         break;
+
+    case 'l':
+        if (length == 3 && memcmp(start, "lib", 3) == 0)
+            return TOK_LIB; // IMPORT LIBRARY
     }
 
     return TOK_IDENTIFIER; // not a keyword
