@@ -5,7 +5,7 @@ This is a Project taken on by me, r4dianc3, and is the brainchild of talking to 
 ## It will include-
 
 - ThermOS(Operating system)
-    1. Inferno(System Cleaner)
+    - Inferno(System Cleaner)
 - Magma(Programming language)
 - Fotix(Image File Format)
 - Blaze(Video File Format)
@@ -17,9 +17,9 @@ This is a Project taken on by me, r4dianc3, and is the brainchild of talking to 
 - Ambust(Anti-virus)
 - Spark(Text Editor)
 - Grafis(Office suite)
-    1. Verbis(DOC reader)
-    2. Lucis(Slide reader)
-    3. Quantis(Spreadsheet reader)
+    - Verbis(DOC reader)
+    - Lucis(Slide reader)
+    - Quantis(Spreadsheet reader)
 - Refractus(Media Player)
 
 ## Why I've created it
