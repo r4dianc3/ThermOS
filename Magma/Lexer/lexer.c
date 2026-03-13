@@ -2,7 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
-#include "Tokens/tokens.h"
+#include "Tokens/tokens.c"
 
 // Fast ASCII character classification macros used by the lexer
 // These operate on plain chars and assume ASCII encoding.
@@ -24,26 +24,18 @@ typedef struct LexerStateStruct
 {
     const char *current;
     const char *end;
+    const uint64_t *line;
+    const uint64_t *column;
 } Lexer;
 
 // Initialize lexer state with source buffer and length.
 // Sets current pointer to beginning and marks end.
-void lexer_init(Lexer *lexer, const char *source, size_t length)
+void lexer_init(Lexer *lexer, const char *source, size_t length, uint64_t line, uint64_t column)
 {
     lexer->current = source;
     lexer->end = source + length;
-}
-
-// Construct a Token given the lexer, type, and starting position.
-// The length is computed from the difference between the current pointer
-// and the start pointer.
-static inline Token make_token(Lexer *lexer, TokenType type, const char *start)
-{
-    Token currentTOK;
-    currentTOK.type = type;
-    currentTOK.start = start;
-    currentTOK.length = (uint32_t)(lexer->current - start);
-    return currentTOK;
+    lexer->line = line;
+    lexer->column = column;
 }
 
 void tokenstream_add(TokenStream *ts, Token token)
